@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 try:
@@ -32,9 +32,9 @@ class Wifite(object):
             Color.pl('{!} {O}re-run as: sudo ./Wifite.py{W}')
             Configuration.exit_gracefully(0)
 
-        self.dependency_check()
-
         Configuration.initialize(load_interface=False)
+
+        self.dependency_check()
 
         if Configuration.show_cracked:
             self.display_cracked()
@@ -47,30 +47,44 @@ class Wifite(object):
             Configuration.get_monitor_mode_interface()
             self.run()
 
+
     def dependency_check(self):
         ''' Check that required programs are installed '''
-        required_apps = ['airmon-ng', 'iwconfig', 'ifconfig', 'aircrack-ng', 'aireplay-ng', 'airodump-ng']
-        optional_apps = ['packetforge-ng', 'reaver', 'bully', 'cowpatty', 'pyrit', 'stdbuf', 'macchanger', 'tshark']
-        missing_required = False
-        missing_optional = False
+        from .tools.airmon import Airmon
+        from .tools.airodump import Airodump
+        from .tools.aircrack import Aircrack
+        from .tools.aireplay import Aireplay
+        from .tools.ifconfig import Ifconfig
+        from .tools.iwconfig import Iwconfig
+        from .tools.bully import Bully
+        from .tools.reaver import Reaver
+        from .tools.wash import Wash
+        from .tools.pyrit import Pyrit
+        from .tools.tshark import Tshark
+        from .tools.macchanger import Macchanger
 
-        for app in required_apps:
-            if not Process.exists(app):
-                missing_required = True
-                Color.pl('{!} {R}error: required app {O}%s{R} was not found' % app)
+        apps = [
+                # Aircrack
+                Airmon, Airodump, Aircrack, Aireplay,
+                # wireless/net tools
+                Iwconfig, Ifconfig,
+                # WPS
+                Reaver, Bully,
+                # Cracking/handshakes
+                Pyrit, Tshark,
+                # Misc
+                Macchanger
+            ]
 
-        for app in optional_apps:
-            if not Process.exists(app):
-                missing_optional = True
-                Color.pl('{!} {O}warning: recommended app {R}%s{O} was not found' % app)
+        missing_required = any([app.fails_dependency_check() for app in apps])
 
         if missing_required:
             Color.pl('{!} {R}required app(s) were not found, exiting.{W}')
             sys.exit(-1)
 
-        if missing_optional:
-            Color.pl('{!} {O}recommended app(s) were not found')
-            Color.pl('{!} {O}wifite may not work as expected{W}')
+        #if missing_optional:
+        #    Color.pl('{!} {O}recommended app(s) were not found')
+        #    Color.pl('{!} {O}wifite may not work as expected{W}')
 
     def display_cracked(self):
         ''' Show cracked targets from cracked.txt '''
@@ -135,9 +149,17 @@ class Wifite(object):
             Color.pl('\n{+} ({G}%d{W}/{G}%d{W})' % (idx, len(targets)) +
                      ' starting attacks against {C}%s{W} ({C}%s{W})'
                 % (t.bssid, t.essid if t.essid_known else "{O}ESSID unknown"))
-            if 'WEP' in t.encryption:
+
+            # TODO: Check if Eviltwin attack is selected.
+
+            if Configuration.use_eviltwin:
+                pass
+
+            elif 'WEP' in t.encryption:
                 attack = AttackWEP(t)
+
             elif 'WPA' in t.encryption:
+                # TODO: Move WPS+WPA decision to a combined attack
                 if t.wps:
                     attack = AttackWPS(t)
                     result = False

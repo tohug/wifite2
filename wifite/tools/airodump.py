@@ -1,6 +1,7 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from .dependency import Dependency
 from .tshark import Tshark
 from .wash import Wash
 from ..util.process import Process
@@ -10,8 +11,11 @@ from ..model.client import Client
 
 import os, time
 
-class Airodump(object):
+class Airodump(Dependency):
     ''' Wrapper around airodump-ng program '''
+    dependency_required = True
+    dependency_name = 'airodump-ng'
+    dependency_url = 'https://www.aircrack-ng.org/install.html'
 
     def __init__(self, interface=None, channel=None, encryption=None,\
                        wps=False, target_bssid=None, output_file_prefix='airodump',\
@@ -188,10 +192,9 @@ class Airodump(object):
         '''Returns list of Target objects parsed from CSV file.'''
         targets = []
         import csv
-        with open(csv_filename, 'rb') as csvopen:
+        with open(csv_filename, 'r') as csvopen:
             lines = []
             for line in csvopen:
-                if type(line) is bytes: line = line.decode('utf-8')
                 line = line.replace('\0', '')
                 lines.append(line)
             csv_reader = csv.reader(lines,

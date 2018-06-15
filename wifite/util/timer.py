@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import time
@@ -24,6 +24,9 @@ class Timer(object):
     @staticmethod
     def secs_to_str(seconds):
         '''Human-readable seconds. 193 -> 3m13s'''
+        if seconds < 0:
+            return '-%ds' % seconds
+
         rem = int(seconds)
         hours = rem / 3600
         mins = (rem % 3600) / 60
